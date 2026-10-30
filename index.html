@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <title>Breakout</title>
+    <style>
+      * {
+        padding: 0;
+        margin: 0;
+      }
+
+      canvas {
+        background: #eeeeee;
+        display: block;
+        margin: 0 auto;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="myCanvas" width="480" height="320"></canvas>
+
+    <script>
+      class Ball {
+        radius = 10;
+        x = canvas.width / 2;
+        y = canvas.height - 30;
+        dx = 0;
+        dy = -2;
+
+        constructor() {
+          console.log("new ball created");
+        }
+
+        update(paddle, bricks, score) {
+          if (
+            this.x + this.dx > canvas.width - this.radius ||
+            this.x + this.dx < this.radius
+          ) {
+            this.dx = this.dx * -1;
+          }
+
+          // brick collision
+          for (i = 0; i < bricks.length - 1; i++) {
+            if (
+              this.x + this.radius > bricks[i].x &&
+              this.x - this.radius < bricks[i].x + bricks[i].width &&
+              this.y + this.radius > bricks[i].y &&
+              this.y - this.radius < bricks[i].y + bricks[i].height
+            ) {
+              bricks.splice(i, 1);
+              this.dy = this.dy * -1;
+              score.Up(10);
+            }
+          }
+
+          // top collision
+          if (this.y + this.dy < this.radius) {
+            this.dy = this.dy * -1;
+            // bottom collision
+          } else if (this.y + this.dy > canvas.height - this.radius) {
+            // check if ball x is in paddle range
+            if (this.x > paddle.x && this.x < paddle.x + paddle.width) {
+              this.dy = this.dy * -1;
+              this.dx = Math.round(this.x - (paddle.x + paddle.width / 2)) / 10;
+            } else {
+              alert("Game over");
+              document.location.reload();
+              clearInterval(interval);
+            }
+          }
+
+          this.x += this.dx;
+          this.y += this.dy;
+        }
+
+        draw() {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+          ctx.fillStyle = "black";
+          ctx.fill();
+          ctx.closePath();
+        }
+      }
+
+      class Paddle {
+        width = 100;
+        height = 10;
+        x = (canvas.width - this.width) / 2;
+
+        constructor() {
+          console.log("new paddle created");
+        }
+
+        update() {
+          if (leftPressed) {
+            this.x = Math.max(this.x - 7, 0);
+          } else if (rightPressed) {
+            this.x = Math.min(this.x + 7, canvas.width - this.width);
+          }
+        }
+
+        draw() {
+          ctx.beginPath();
+          ctx.rect(
+            this.x,
+            canvas.height - this.height,
+            this.width,
+            this.height,
+          );
+          ctx.fillStyle = "black";
+          ctx.fill();
+          ctx.closePath();
+        }
+      }
+
+      class Brick {
+        x;
+        y;
+
+        width = 50;
+        height = 25;
+
+        color;
+
+        constructor(x, y, color) {
+          this.x = x;
+          this.y = y;
+          this.color = color;
+          console.log("new brick created");
+        }
+
+        update() {}
+
+        draw() {
+          ctx.beginPath();
+          ctx.rect(this.x, this.y, this.width, this.height);
+          ctx.fillStyle = this.color;
+          ctx.fill();
+          ctx.closePath();
+        }
+      }
+
+      class Score {
+        #value = 0;
+
+        constructor() {}
+
+        Up(value) {
+          this.#value += value;
+        }
+
+        update() {}
+
+        draw() {
+          ctx.font = "20px Arial";
+          ctx.fillStyle = "black";
+          ctx.fillText("Score " + this.#value, 0, canvas.height - 20);
+        }
+      }
+
+      const canvas = document.getElementById("myCanvas");
+      const ctx = canvas.getContext("2d");
+
+      let ball = new Ball();
+      let paddle = new Paddle();
+      let score = new Score();
+      let bricks = ((n) => {
+        colors = ["blue", "red", "green", "purple", "yellow", "orange"];
+        colorI = 0;
+        arr = [];
+        x = 35;
+        y = 20;
+
+        for (i = 0; i < n; i++) {
+          arr.push(new Brick(x, y, colors[colorI]));
+          brick = arr[0]; // move brick.width to constant
+          x += brick.width + 10;
+
+          if (x >= canvas.width - brick.width) {
+            y += brick.height + 20; // move brick.height to constant
+            x = 35;
+            colorI += 1;
+          }
+        }
+
+        return arr;
+      })(29);
+
+      let leftPressed = false;
+      let rightPressed = false;
+
+      let interval = 0;
+
+      document.addEventListener("keydown", keyDownHandler);
+      document.addEventListener("keyup", keyUpHandler);
+
+      function keyDownHandler(e) {
+        if (e.key === "Right" || e.key === "ArrowRight") {
+          rightPressed = true;
+        } else if (e.key === "Left" || e.key === "ArrowLeft") {
+          leftPressed = true;
+        }
+      }
+
+      function keyUpHandler(e) {
+        if (e.key === "Right" || e.key === "ArrowRight") {
+          rightPressed = false;
+        } else if (e.key === "Left" || e.key === "ArrowLeft") {
+          leftPressed = false;
+        }
+      }
+
+      function drawPaddle() {}
+
+      function gameLoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ball.draw();
+        ball.update(paddle, bricks, score);
+
+        paddle.draw();
+        paddle.update();
+
+        score.draw();
+        score.update();
+
+        for (i = 0; i < bricks.length - 1; i++) {
+          bricks[i].draw();
+        }
+      }
+
+      interval = setInterval(gameLoop, 10);
+    </script>
+  </body>
+</html>
